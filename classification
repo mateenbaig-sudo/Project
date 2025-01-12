@@ -1,0 +1,1309 @@
+
+# import neccessary libraries
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.manifold import TSNE
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn import metrics
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import precision_score, f1_score, confusion_matrix
+import itertools
+from sklearn.neighbors import KNeighborsClassifier
+# from pandas_ml import ConfusionMatrix
+data_1 = pd.read_excel('./data/fast.xlsx')
+data_2 = pd.read_excel('./data/slow.xlsx')
+data_3 = pd.read_excel('./data/normal.xlsx')
+data_4 = pd.read_excel('./data/test.xlsx')
+data = pd.concat([data_1, data_2, data_3], axis=0)
+C:\Users\Shubham\Anaconda3\lib\site-packages\ipykernel_launcher.py:5: FutureWarning: Sorting because non-concatenation axis is not aligned. A future version
+of pandas will change to not sort by default.
+
+To accept the future behavior, pass 'sort=False'.
+
+To retain the current behavior and silence the warning, pass 'sort=True'.
+
+  """
+# data = data.sort_values(by='breath')
+data.to_csv('data.csv')
+# breath_values = data.feature
+# breath_values.plot.kde()
+# data
+# performs t-sne with different perplexity values and their repective plots..
+
+def perform_tsne(X_data, y_data, perplexities, n_iter, img_name_prefix='t-sne'):
+        
+    for index,perplexity in enumerate(perplexities):
+        for n_ite in n_iter:
+            # perform t-sne
+            print('\nperforming tsne with perplexity {} and with {} iterations at max'.format(perplexity, n_ite))
+            X_reduced = TSNE(verbose=2, perplexity=perplexity).fit_transform(X_data)
+            print('Done..')
+
+            # prepare the data for seaborn         
+            print('Creating plot for this t-sne visualization..')
+            df = pd.DataFrame({'x':X_reduced[:,0], 'y':X_reduced[:,1] ,'label':y_data})
+
+            # draw the plot in appropriate place in the grid
+            sns.color_palette("rocket")
+#             sns.color_palette("hls", 8)
+#             sns.color_palette("flare", as_cmap=True)
+            sns.lmplot(data=df, x='x', y='y', hue='label', fit_reg=False, size=8,\
+                       palette="rocket",markers=['^','v','*'])
+            plt.title("perplexity : {} and max_iter : {}".format(perplexity, n_ite))
+            img_name = img_name_prefix + '_perp_{}_iter_{}.png'.format(perplexity, n_ite)
+            print('saving this plot as image in present working directory...')
+            plt.savefig(img_name)
+            plt.show()
+            print('Done')
+        
+X_pre_tsne = data.drop(['class'], axis=1) #.as_matrix(columns =None).reshape(-1,1)
+y_pre_tsne = data['class']
+perform_tsne(X_data = X_pre_tsne,y_data=y_pre_tsne, perplexities =[2,5,10,20,50], n_iter=[1000,2000,3000,4000,5000])
+performing tsne with perplexity 2 and with 1000 iterations at max
+[t-SNE] Computing 7 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.006s...
+[t-SNE] Computed neighbors for 3000 samples in 0.016s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.161s
+[t-SNE] Iteration 50: error = 92.0605850, gradient norm = 0.0755698 (50 iterations in 0.896s)
+[t-SNE] Iteration 100: error = 79.1011353, gradient norm = 0.0511350 (50 iterations in 0.882s)
+[t-SNE] Iteration 150: error = 73.5547333, gradient norm = 0.0425149 (50 iterations in 0.804s)
+[t-SNE] Iteration 200: error = 69.9105072, gradient norm = 0.0389281 (50 iterations in 0.800s)
+[t-SNE] Iteration 250: error = 67.2441025, gradient norm = 0.0336767 (50 iterations in 0.812s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 67.244102
+[t-SNE] Iteration 300: error = 1.7626480, gradient norm = 0.0014983 (50 iterations in 0.836s)
+[t-SNE] Iteration 350: error = 1.1062157, gradient norm = 0.0009683 (50 iterations in 0.866s)
+[t-SNE] Iteration 400: error = 0.8604936, gradient norm = 0.0005708 (50 iterations in 0.821s)
+[t-SNE] Iteration 450: error = 0.7023630, gradient norm = 0.0004353 (50 iterations in 0.776s)
+[t-SNE] Iteration 500: error = 0.5949410, gradient norm = 0.0003391 (50 iterations in 0.832s)
+[t-SNE] Iteration 550: error = 0.5199531, gradient norm = 0.0002816 (50 iterations in 0.815s)
+[t-SNE] Iteration 600: error = 0.4663002, gradient norm = 0.0002556 (50 iterations in 0.776s)
+[t-SNE] Iteration 650: error = 0.4235319, gradient norm = 0.0002385 (50 iterations in 0.866s)
+[t-SNE] Iteration 700: error = 0.3911778, gradient norm = 0.0002094 (50 iterations in 0.828s)
+[t-SNE] Iteration 750: error = 0.3630807, gradient norm = 0.0001828 (50 iterations in 0.862s)
+[t-SNE] Iteration 800: error = 0.3391299, gradient norm = 0.0001629 (50 iterations in 0.832s)
+[t-SNE] Iteration 850: error = 0.3187765, gradient norm = 0.0001600 (50 iterations in 0.866s)
+[t-SNE] Iteration 900: error = 0.3000629, gradient norm = 0.0001554 (50 iterations in 0.891s)
+[t-SNE] Iteration 950: error = 0.2824225, gradient norm = 0.0001455 (50 iterations in 0.878s)
+[t-SNE] Iteration 1000: error = 0.2674038, gradient norm = 0.0001415 (50 iterations in 0.888s)
+[t-SNE] KL divergence after 1000 iterations: 0.267404
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 2 and with 2000 iterations at max
+[t-SNE] Computing 7 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.008s...
+[t-SNE] Computed neighbors for 3000 samples in 0.014s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.137s
+[t-SNE] Iteration 50: error = 91.8613739, gradient norm = 0.0702368 (50 iterations in 0.875s)
+[t-SNE] Iteration 100: error = 79.0791550, gradient norm = 0.0506717 (50 iterations in 0.786s)
+[t-SNE] Iteration 150: error = 73.5482559, gradient norm = 0.0458160 (50 iterations in 0.808s)
+[t-SNE] Iteration 200: error = 69.9223785, gradient norm = 0.0380293 (50 iterations in 0.870s)
+[t-SNE] Iteration 250: error = 67.2443924, gradient norm = 0.0373127 (50 iterations in 0.800s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 67.244392
+[t-SNE] Iteration 300: error = 1.7620462, gradient norm = 0.0014948 (50 iterations in 0.887s)
+[t-SNE] Iteration 350: error = 1.1031829, gradient norm = 0.0009693 (50 iterations in 0.879s)
+[t-SNE] Iteration 400: error = 0.8606401, gradient norm = 0.0005682 (50 iterations in 0.888s)
+[t-SNE] Iteration 450: error = 0.7003238, gradient norm = 0.0004377 (50 iterations in 0.798s)
+[t-SNE] Iteration 500: error = 0.5901433, gradient norm = 0.0003379 (50 iterations in 0.788s)
+[t-SNE] Iteration 550: error = 0.5177206, gradient norm = 0.0002805 (50 iterations in 0.795s)
+[t-SNE] Iteration 600: error = 0.4635440, gradient norm = 0.0002490 (50 iterations in 0.791s)
+[t-SNE] Iteration 650: error = 0.4211511, gradient norm = 0.0002246 (50 iterations in 0.855s)
+[t-SNE] Iteration 700: error = 0.3897654, gradient norm = 0.0002001 (50 iterations in 0.836s)
+[t-SNE] Iteration 750: error = 0.3614236, gradient norm = 0.0001852 (50 iterations in 0.920s)
+[t-SNE] Iteration 800: error = 0.3382909, gradient norm = 0.0001893 (50 iterations in 0.918s)
+[t-SNE] Iteration 850: error = 0.3174546, gradient norm = 0.0001735 (50 iterations in 0.865s)
+[t-SNE] Iteration 900: error = 0.2992005, gradient norm = 0.0001559 (50 iterations in 0.874s)
+[t-SNE] Iteration 950: error = 0.2828292, gradient norm = 0.0001603 (50 iterations in 0.946s)
+[t-SNE] Iteration 1000: error = 0.2677400, gradient norm = 0.0001554 (50 iterations in 0.908s)
+[t-SNE] KL divergence after 1000 iterations: 0.267740
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 2 and with 3000 iterations at max
+[t-SNE] Computing 7 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.012s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.149s
+[t-SNE] Iteration 50: error = 92.1048431, gradient norm = 0.0752222 (50 iterations in 0.958s)
+[t-SNE] Iteration 100: error = 79.1528702, gradient norm = 0.0522658 (50 iterations in 0.841s)
+[t-SNE] Iteration 150: error = 73.5881424, gradient norm = 0.0424240 (50 iterations in 0.924s)
+[t-SNE] Iteration 200: error = 69.9742889, gradient norm = 0.0392967 (50 iterations in 0.804s)
+[t-SNE] Iteration 250: error = 67.2673798, gradient norm = 0.0306359 (50 iterations in 0.792s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 67.267380
+[t-SNE] Iteration 300: error = 1.7616727, gradient norm = 0.0014863 (50 iterations in 0.812s)
+[t-SNE] Iteration 350: error = 1.1057742, gradient norm = 0.0009832 (50 iterations in 0.878s)
+[t-SNE] Iteration 400: error = 0.8654724, gradient norm = 0.0005741 (50 iterations in 0.867s)
+[t-SNE] Iteration 450: error = 0.7035928, gradient norm = 0.0004399 (50 iterations in 0.803s)
+[t-SNE] Iteration 500: error = 0.5966902, gradient norm = 0.0003410 (50 iterations in 0.842s)
+[t-SNE] Iteration 550: error = 0.5225866, gradient norm = 0.0002815 (50 iterations in 0.845s)
+[t-SNE] Iteration 600: error = 0.4689944, gradient norm = 0.0002576 (50 iterations in 0.804s)
+[t-SNE] Iteration 650: error = 0.4272125, gradient norm = 0.0002439 (50 iterations in 0.850s)
+[t-SNE] Iteration 700: error = 0.3952117, gradient norm = 0.0002063 (50 iterations in 0.862s)
+[t-SNE] Iteration 750: error = 0.3696164, gradient norm = 0.0002115 (50 iterations in 0.842s)
+[t-SNE] Iteration 800: error = 0.3459526, gradient norm = 0.0001702 (50 iterations in 0.866s)
+[t-SNE] Iteration 850: error = 0.3232090, gradient norm = 0.0001713 (50 iterations in 0.858s)
+[t-SNE] Iteration 900: error = 0.3036897, gradient norm = 0.0001875 (50 iterations in 0.890s)
+[t-SNE] Iteration 950: error = 0.2869922, gradient norm = 0.0001723 (50 iterations in 0.900s)
+[t-SNE] Iteration 1000: error = 0.2712459, gradient norm = 0.0001624 (50 iterations in 0.892s)
+[t-SNE] KL divergence after 1000 iterations: 0.271246
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 2 and with 4000 iterations at max
+[t-SNE] Computing 7 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.008s...
+[t-SNE] Computed neighbors for 3000 samples in 0.016s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.141s
+[t-SNE] Iteration 50: error = 91.9807587, gradient norm = 0.0746948 (50 iterations in 0.958s)
+[t-SNE] Iteration 100: error = 79.1040726, gradient norm = 0.0499642 (50 iterations in 0.822s)
+[t-SNE] Iteration 150: error = 73.5238419, gradient norm = 0.0408441 (50 iterations in 0.812s)
+[t-SNE] Iteration 200: error = 69.8990555, gradient norm = 0.0372222 (50 iterations in 0.806s)
+[t-SNE] Iteration 250: error = 67.2292404, gradient norm = 0.0359789 (50 iterations in 0.804s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 67.229240
+[t-SNE] Iteration 300: error = 1.7612327, gradient norm = 0.0014899 (50 iterations in 0.842s)
+[t-SNE] Iteration 350: error = 1.1021103, gradient norm = 0.0009724 (50 iterations in 0.845s)
+[t-SNE] Iteration 400: error = 0.8599627, gradient norm = 0.0005683 (50 iterations in 0.909s)
+[t-SNE] Iteration 450: error = 0.6990790, gradient norm = 0.0004416 (50 iterations in 0.824s)
+[t-SNE] Iteration 500: error = 0.5893018, gradient norm = 0.0003383 (50 iterations in 0.808s)
+[t-SNE] Iteration 550: error = 0.5162018, gradient norm = 0.0002800 (50 iterations in 0.812s)
+[t-SNE] Iteration 600: error = 0.4627657, gradient norm = 0.0002485 (50 iterations in 0.826s)
+[t-SNE] Iteration 650: error = 0.4198636, gradient norm = 0.0002399 (50 iterations in 0.902s)
+[t-SNE] Iteration 700: error = 0.3868289, gradient norm = 0.0002116 (50 iterations in 0.850s)
+[t-SNE] Iteration 750: error = 0.3611317, gradient norm = 0.0001928 (50 iterations in 0.858s)
+[t-SNE] Iteration 800: error = 0.3367780, gradient norm = 0.0001736 (50 iterations in 0.957s)
+[t-SNE] Iteration 850: error = 0.3162652, gradient norm = 0.0001656 (50 iterations in 0.888s)
+[t-SNE] Iteration 900: error = 0.2975586, gradient norm = 0.0001607 (50 iterations in 0.878s)
+[t-SNE] Iteration 950: error = 0.2810816, gradient norm = 0.0001689 (50 iterations in 0.886s)
+[t-SNE] Iteration 1000: error = 0.2670701, gradient norm = 0.0001456 (50 iterations in 1.096s)
+[t-SNE] KL divergence after 1000 iterations: 0.267070
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 2 and with 5000 iterations at max
+[t-SNE] Computing 7 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.016s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.147s
+[t-SNE] Iteration 50: error = 92.1639862, gradient norm = 0.0787362 (50 iterations in 0.919s)
+[t-SNE] Iteration 100: error = 79.1469727, gradient norm = 0.0478606 (50 iterations in 0.818s)
+[t-SNE] Iteration 150: error = 73.5622025, gradient norm = 0.0386276 (50 iterations in 0.832s)
+[t-SNE] Iteration 200: error = 69.9416580, gradient norm = 0.0377131 (50 iterations in 0.824s)
+[t-SNE] Iteration 250: error = 67.2645798, gradient norm = 0.0341523 (50 iterations in 0.804s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 67.264580
+[t-SNE] Iteration 300: error = 1.7624595, gradient norm = 0.0014897 (50 iterations in 0.878s)
+[t-SNE] Iteration 350: error = 1.1077569, gradient norm = 0.0009856 (50 iterations in 0.887s)
+[t-SNE] Iteration 400: error = 0.8651563, gradient norm = 0.0005658 (50 iterations in 0.876s)
+[t-SNE] Iteration 450: error = 0.7019805, gradient norm = 0.0004282 (50 iterations in 0.752s)
+[t-SNE] Iteration 500: error = 0.5948420, gradient norm = 0.0003452 (50 iterations in 0.842s)
+[t-SNE] Iteration 550: error = 0.5215627, gradient norm = 0.0002763 (50 iterations in 0.854s)
+[t-SNE] Iteration 600: error = 0.4661698, gradient norm = 0.0002585 (50 iterations in 0.804s)
+[t-SNE] Iteration 650: error = 0.4228373, gradient norm = 0.0002401 (50 iterations in 0.866s)
+[t-SNE] Iteration 700: error = 0.3906042, gradient norm = 0.0002108 (50 iterations in 0.949s)
+[t-SNE] Iteration 750: error = 0.3628300, gradient norm = 0.0001991 (50 iterations in 0.866s)
+[t-SNE] Iteration 800: error = 0.3399420, gradient norm = 0.0001807 (50 iterations in 1.024s)
+[t-SNE] Iteration 850: error = 0.3179302, gradient norm = 0.0001676 (50 iterations in 0.862s)
+[t-SNE] Iteration 900: error = 0.3008418, gradient norm = 0.0001754 (50 iterations in 0.845s)
+[t-SNE] Iteration 950: error = 0.2832362, gradient norm = 0.0001550 (50 iterations in 0.875s)
+[t-SNE] Iteration 1000: error = 0.2685641, gradient norm = 0.0001453 (50 iterations in 0.897s)
+[t-SNE] KL divergence after 1000 iterations: 0.268564
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 5 and with 1000 iterations at max
+[t-SNE] Computing 16 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.021s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.142s
+[t-SNE] Iteration 50: error = 86.3743210, gradient norm = 0.0611977 (50 iterations in 0.888s)
+[t-SNE] Iteration 100: error = 73.4457169, gradient norm = 0.0375052 (50 iterations in 0.740s)
+[t-SNE] Iteration 150: error = 68.1420746, gradient norm = 0.0311144 (50 iterations in 0.743s)
+[t-SNE] Iteration 200: error = 64.7835464, gradient norm = 0.0278223 (50 iterations in 0.798s)
+[t-SNE] Iteration 250: error = 62.3779640, gradient norm = 0.0263422 (50 iterations in 0.774s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 62.377964
+[t-SNE] Iteration 300: error = 1.4859841, gradient norm = 0.0013730 (50 iterations in 0.876s)
+[t-SNE] Iteration 350: error = 0.8405505, gradient norm = 0.0007213 (50 iterations in 0.981s)
+[t-SNE] Iteration 400: error = 0.6392477, gradient norm = 0.0004854 (50 iterations in 0.834s)
+[t-SNE] Iteration 450: error = 0.5106677, gradient norm = 0.0003455 (50 iterations in 0.752s)
+[t-SNE] Iteration 500: error = 0.4228683, gradient norm = 0.0002727 (50 iterations in 0.780s)
+[t-SNE] Iteration 550: error = 0.3635794, gradient norm = 0.0002327 (50 iterations in 0.788s)
+[t-SNE] Iteration 600: error = 0.3216099, gradient norm = 0.0002048 (50 iterations in 0.782s)
+[t-SNE] Iteration 650: error = 0.2904912, gradient norm = 0.0001790 (50 iterations in 0.832s)
+[t-SNE] Iteration 700: error = 0.2653159, gradient norm = 0.0001604 (50 iterations in 0.812s)
+[t-SNE] Iteration 750: error = 0.2443538, gradient norm = 0.0001445 (50 iterations in 0.829s)
+[t-SNE] Iteration 800: error = 0.2255727, gradient norm = 0.0001379 (50 iterations in 0.812s)
+[t-SNE] Iteration 850: error = 0.2097723, gradient norm = 0.0001226 (50 iterations in 0.820s)
+[t-SNE] Iteration 900: error = 0.1961354, gradient norm = 0.0001164 (50 iterations in 0.838s)
+[t-SNE] Iteration 950: error = 0.1840482, gradient norm = 0.0001102 (50 iterations in 0.828s)
+[t-SNE] Iteration 1000: error = 0.1734157, gradient norm = 0.0000969 (50 iterations in 0.832s)
+[t-SNE] KL divergence after 1000 iterations: 0.173416
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 5 and with 2000 iterations at max
+[t-SNE] Computing 16 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.020s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.151s
+[t-SNE] Iteration 50: error = 86.3761978, gradient norm = 0.0635793 (50 iterations in 0.937s)
+[t-SNE] Iteration 100: error = 73.5500793, gradient norm = 0.0376151 (50 iterations in 0.734s)
+[t-SNE] Iteration 150: error = 68.1918182, gradient norm = 0.0351724 (50 iterations in 0.765s)
+[t-SNE] Iteration 200: error = 64.7931442, gradient norm = 0.0280101 (50 iterations in 0.805s)
+[t-SNE] Iteration 250: error = 62.3271904, gradient norm = 0.0274409 (50 iterations in 0.790s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 62.327190
+[t-SNE] Iteration 300: error = 1.4832693, gradient norm = 0.0013774 (50 iterations in 0.842s)
+[t-SNE] Iteration 350: error = 0.8453976, gradient norm = 0.0007138 (50 iterations in 0.899s)
+[t-SNE] Iteration 400: error = 0.6422705, gradient norm = 0.0004732 (50 iterations in 0.792s)
+[t-SNE] Iteration 450: error = 0.5133588, gradient norm = 0.0003403 (50 iterations in 0.758s)
+[t-SNE] Iteration 500: error = 0.4259979, gradient norm = 0.0002775 (50 iterations in 0.766s)
+[t-SNE] Iteration 550: error = 0.3697457, gradient norm = 0.0002264 (50 iterations in 0.774s)
+[t-SNE] Iteration 600: error = 0.3283255, gradient norm = 0.0001963 (50 iterations in 0.774s)
+[t-SNE] Iteration 650: error = 0.2965266, gradient norm = 0.0001763 (50 iterations in 0.785s)
+[t-SNE] Iteration 700: error = 0.2712961, gradient norm = 0.0001579 (50 iterations in 0.790s)
+[t-SNE] Iteration 750: error = 0.2510654, gradient norm = 0.0001461 (50 iterations in 0.791s)
+[t-SNE] Iteration 800: error = 0.2332066, gradient norm = 0.0001354 (50 iterations in 0.792s)
+[t-SNE] Iteration 850: error = 0.2178725, gradient norm = 0.0001229 (50 iterations in 0.800s)
+[t-SNE] Iteration 900: error = 0.2049082, gradient norm = 0.0001135 (50 iterations in 0.820s)
+[t-SNE] Iteration 950: error = 0.1932136, gradient norm = 0.0001043 (50 iterations in 0.865s)
+[t-SNE] Iteration 1000: error = 0.1828429, gradient norm = 0.0001031 (50 iterations in 0.842s)
+[t-SNE] KL divergence after 1000 iterations: 0.182843
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 5 and with 3000 iterations at max
+[t-SNE] Computing 16 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.006s...
+[t-SNE] Computed neighbors for 3000 samples in 0.024s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.137s
+[t-SNE] Iteration 50: error = 86.2567749, gradient norm = 0.0612115 (50 iterations in 0.973s)
+[t-SNE] Iteration 100: error = 73.4014587, gradient norm = 0.0393790 (50 iterations in 0.829s)
+[t-SNE] Iteration 150: error = 68.1042023, gradient norm = 0.0307630 (50 iterations in 0.897s)
+[t-SNE] Iteration 200: error = 64.7316895, gradient norm = 0.0306366 (50 iterations in 0.915s)
+[t-SNE] Iteration 250: error = 62.2755394, gradient norm = 0.0239656 (50 iterations in 0.824s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 62.275539
+[t-SNE] Iteration 300: error = 1.4821681, gradient norm = 0.0013725 (50 iterations in 0.987s)
+[t-SNE] Iteration 350: error = 0.8371422, gradient norm = 0.0007195 (50 iterations in 0.979s)
+[t-SNE] Iteration 400: error = 0.6367197, gradient norm = 0.0004689 (50 iterations in 0.825s)
+[t-SNE] Iteration 450: error = 0.5067861, gradient norm = 0.0003482 (50 iterations in 0.768s)
+[t-SNE] Iteration 500: error = 0.4188874, gradient norm = 0.0002789 (50 iterations in 0.774s)
+[t-SNE] Iteration 550: error = 0.3610607, gradient norm = 0.0002255 (50 iterations in 0.796s)
+[t-SNE] Iteration 600: error = 0.3187482, gradient norm = 0.0002031 (50 iterations in 0.811s)
+[t-SNE] Iteration 650: error = 0.2883987, gradient norm = 0.0001763 (50 iterations in 0.884s)
+[t-SNE] Iteration 700: error = 0.2633524, gradient norm = 0.0001569 (50 iterations in 0.857s)
+[t-SNE] Iteration 750: error = 0.2422129, gradient norm = 0.0001448 (50 iterations in 0.810s)
+[t-SNE] Iteration 800: error = 0.2237909, gradient norm = 0.0001332 (50 iterations in 0.814s)
+[t-SNE] Iteration 850: error = 0.2076713, gradient norm = 0.0001284 (50 iterations in 0.812s)
+[t-SNE] Iteration 900: error = 0.1942991, gradient norm = 0.0001181 (50 iterations in 0.826s)
+[t-SNE] Iteration 950: error = 0.1824171, gradient norm = 0.0001139 (50 iterations in 0.824s)
+[t-SNE] Iteration 1000: error = 0.1717694, gradient norm = 0.0000975 (50 iterations in 0.828s)
+[t-SNE] KL divergence after 1000 iterations: 0.171769
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 5 and with 4000 iterations at max
+[t-SNE] Computing 16 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.005s...
+[t-SNE] Computed neighbors for 3000 samples in 0.020s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.135s
+[t-SNE] Iteration 50: error = 86.4183426, gradient norm = 0.0586245 (50 iterations in 0.874s)
+[t-SNE] Iteration 100: error = 73.5890808, gradient norm = 0.0365026 (50 iterations in 0.746s)
+[t-SNE] Iteration 150: error = 68.2835236, gradient norm = 0.0299264 (50 iterations in 0.794s)
+[t-SNE] Iteration 200: error = 64.9065475, gradient norm = 0.0289751 (50 iterations in 0.792s)
+[t-SNE] Iteration 250: error = 62.4462547, gradient norm = 0.0226489 (50 iterations in 0.796s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 62.446255
+[t-SNE] Iteration 300: error = 1.4882287, gradient norm = 0.0013756 (50 iterations in 0.812s)
+[t-SNE] Iteration 350: error = 0.8493397, gradient norm = 0.0007181 (50 iterations in 1.033s)
+[t-SNE] Iteration 400: error = 0.6491146, gradient norm = 0.0004665 (50 iterations in 0.790s)
+[t-SNE] Iteration 450: error = 0.5194308, gradient norm = 0.0003425 (50 iterations in 0.822s)
+[t-SNE] Iteration 500: error = 0.4325700, gradient norm = 0.0002751 (50 iterations in 0.802s)
+[t-SNE] Iteration 550: error = 0.3744872, gradient norm = 0.0002277 (50 iterations in 0.788s)
+[t-SNE] Iteration 600: error = 0.3333914, gradient norm = 0.0002017 (50 iterations in 0.853s)
+[t-SNE] Iteration 650: error = 0.3024356, gradient norm = 0.0001744 (50 iterations in 0.892s)
+[t-SNE] Iteration 700: error = 0.2773826, gradient norm = 0.0001547 (50 iterations in 0.858s)
+[t-SNE] Iteration 750: error = 0.2565928, gradient norm = 0.0001475 (50 iterations in 0.857s)
+[t-SNE] Iteration 800: error = 0.2389047, gradient norm = 0.0001371 (50 iterations in 0.842s)
+[t-SNE] Iteration 850: error = 0.2237121, gradient norm = 0.0001341 (50 iterations in 0.929s)
+[t-SNE] Iteration 900: error = 0.2110728, gradient norm = 0.0001248 (50 iterations in 1.002s)
+[t-SNE] Iteration 950: error = 0.1995107, gradient norm = 0.0001146 (50 iterations in 0.843s)
+[t-SNE] Iteration 1000: error = 0.1897021, gradient norm = 0.0001145 (50 iterations in 0.820s)
+[t-SNE] KL divergence after 1000 iterations: 0.189702
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 5 and with 5000 iterations at max
+[t-SNE] Computing 16 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.021s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.143s
+[t-SNE] Iteration 50: error = 86.1454468, gradient norm = 0.0585609 (50 iterations in 0.908s)
+[t-SNE] Iteration 100: error = 73.3460999, gradient norm = 0.0413447 (50 iterations in 0.748s)
+[t-SNE] Iteration 150: error = 68.0437927, gradient norm = 0.0322281 (50 iterations in 0.776s)
+[t-SNE] Iteration 200: error = 64.6508179, gradient norm = 0.0269986 (50 iterations in 0.794s)
+[t-SNE] Iteration 250: error = 62.2102661, gradient norm = 0.0255619 (50 iterations in 0.784s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 62.210266
+[t-SNE] Iteration 300: error = 1.4834909, gradient norm = 0.0013751 (50 iterations in 0.925s)
+[t-SNE] Iteration 350: error = 0.8395054, gradient norm = 0.0007226 (50 iterations in 0.967s)
+[t-SNE] Iteration 400: error = 0.6357009, gradient norm = 0.0004709 (50 iterations in 0.811s)
+[t-SNE] Iteration 450: error = 0.5062333, gradient norm = 0.0003454 (50 iterations in 0.845s)
+[t-SNE] Iteration 500: error = 0.4188180, gradient norm = 0.0002798 (50 iterations in 0.847s)
+[t-SNE] Iteration 550: error = 0.3603179, gradient norm = 0.0002335 (50 iterations in 0.790s)
+[t-SNE] Iteration 600: error = 0.3192061, gradient norm = 0.0001963 (50 iterations in 0.791s)
+[t-SNE] Iteration 650: error = 0.2870194, gradient norm = 0.0001715 (50 iterations in 0.788s)
+[t-SNE] Iteration 700: error = 0.2606446, gradient norm = 0.0001561 (50 iterations in 0.832s)
+[t-SNE] Iteration 750: error = 0.2390691, gradient norm = 0.0001435 (50 iterations in 0.832s)
+[t-SNE] Iteration 800: error = 0.2203769, gradient norm = 0.0001299 (50 iterations in 0.876s)
+[t-SNE] Iteration 850: error = 0.2047579, gradient norm = 0.0001177 (50 iterations in 0.856s)
+[t-SNE] Iteration 900: error = 0.1910189, gradient norm = 0.0001092 (50 iterations in 0.871s)
+[t-SNE] Iteration 950: error = 0.1783792, gradient norm = 0.0001054 (50 iterations in 0.883s)
+[t-SNE] Iteration 1000: error = 0.1682307, gradient norm = 0.0001001 (50 iterations in 0.888s)
+[t-SNE] KL divergence after 1000 iterations: 0.168231
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 10 and with 1000 iterations at max
+[t-SNE] Computing 31 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.029s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.402s
+[t-SNE] Iteration 50: error = 80.7741241, gradient norm = 0.0525063 (50 iterations in 0.852s)
+[t-SNE] Iteration 100: error = 68.3274841, gradient norm = 0.0391755 (50 iterations in 0.734s)
+[t-SNE] Iteration 150: error = 63.3633766, gradient norm = 0.0244552 (50 iterations in 0.770s)
+[t-SNE] Iteration 200: error = 60.4098320, gradient norm = 0.0215960 (50 iterations in 0.742s)
+[t-SNE] Iteration 250: error = 58.3529739, gradient norm = 0.0207068 (50 iterations in 0.762s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 58.352974
+[t-SNE] Iteration 300: error = 1.2043290, gradient norm = 0.0012762 (50 iterations in 0.887s)
+[t-SNE] Iteration 350: error = 0.6421913, gradient norm = 0.0005345 (50 iterations in 1.080s)
+[t-SNE] Iteration 400: error = 0.4646275, gradient norm = 0.0003662 (50 iterations in 1.036s)
+[t-SNE] Iteration 450: error = 0.3789183, gradient norm = 0.0002490 (50 iterations in 0.800s)
+[t-SNE] Iteration 500: error = 0.3222735, gradient norm = 0.0002082 (50 iterations in 0.816s)
+[t-SNE] Iteration 550: error = 0.2872292, gradient norm = 0.0001828 (50 iterations in 0.788s)
+[t-SNE] Iteration 600: error = 0.2626696, gradient norm = 0.0001586 (50 iterations in 0.977s)
+[t-SNE] Iteration 650: error = 0.2438179, gradient norm = 0.0001481 (50 iterations in 1.042s)
+[t-SNE] Iteration 700: error = 0.2286595, gradient norm = 0.0001272 (50 iterations in 0.928s)
+[t-SNE] Iteration 750: error = 0.2154353, gradient norm = 0.0001203 (50 iterations in 0.880s)
+[t-SNE] Iteration 800: error = 0.2051477, gradient norm = 0.0001132 (50 iterations in 0.846s)
+[t-SNE] Iteration 850: error = 0.1958706, gradient norm = 0.0001080 (50 iterations in 0.891s)
+[t-SNE] Iteration 900: error = 0.1872810, gradient norm = 0.0001043 (50 iterations in 0.832s)
+[t-SNE] Iteration 950: error = 0.1806802, gradient norm = 0.0000941 (50 iterations in 0.866s)
+[t-SNE] Iteration 1000: error = 0.1729153, gradient norm = 0.0000885 (50 iterations in 0.845s)
+[t-SNE] KL divergence after 1000 iterations: 0.172915
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 10 and with 2000 iterations at max
+[t-SNE] Computing 31 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.008s...
+[t-SNE] Computed neighbors for 3000 samples in 0.029s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.417s
+[t-SNE] Iteration 50: error = 80.5097580, gradient norm = 0.0519908 (50 iterations in 0.871s)
+[t-SNE] Iteration 100: error = 67.9648132, gradient norm = 0.0340223 (50 iterations in 0.766s)
+[t-SNE] Iteration 150: error = 63.1376038, gradient norm = 0.0253752 (50 iterations in 0.732s)
+[t-SNE] Iteration 200: error = 60.2722321, gradient norm = 0.0197628 (50 iterations in 0.760s)
+[t-SNE] Iteration 250: error = 58.3045197, gradient norm = 0.0204976 (50 iterations in 0.778s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 58.304520
+[t-SNE] Iteration 300: error = 1.2143137, gradient norm = 0.0012760 (50 iterations in 0.907s)
+[t-SNE] Iteration 350: error = 0.6510325, gradient norm = 0.0005364 (50 iterations in 1.025s)
+[t-SNE] Iteration 400: error = 0.4669891, gradient norm = 0.0003695 (50 iterations in 0.845s)
+[t-SNE] Iteration 450: error = 0.3836196, gradient norm = 0.0002437 (50 iterations in 0.764s)
+[t-SNE] Iteration 500: error = 0.3228092, gradient norm = 0.0002185 (50 iterations in 0.782s)
+[t-SNE] Iteration 550: error = 0.2857420, gradient norm = 0.0001839 (50 iterations in 0.762s)
+[t-SNE] Iteration 600: error = 0.2586235, gradient norm = 0.0001696 (50 iterations in 0.766s)
+[t-SNE] Iteration 650: error = 0.2394251, gradient norm = 0.0001423 (50 iterations in 0.800s)
+[t-SNE] Iteration 700: error = 0.2231984, gradient norm = 0.0001272 (50 iterations in 0.808s)
+[t-SNE] Iteration 750: error = 0.2109697, gradient norm = 0.0001259 (50 iterations in 0.816s)
+[t-SNE] Iteration 800: error = 0.1986361, gradient norm = 0.0001234 (50 iterations in 0.794s)
+[t-SNE] Iteration 850: error = 0.1904377, gradient norm = 0.0001166 (50 iterations in 0.792s)
+[t-SNE] Iteration 900: error = 0.1832908, gradient norm = 0.0001024 (50 iterations in 0.792s)
+[t-SNE] Iteration 950: error = 0.1766808, gradient norm = 0.0000962 (50 iterations in 0.794s)
+[t-SNE] Iteration 1000: error = 0.1674336, gradient norm = 0.0000870 (50 iterations in 0.788s)
+[t-SNE] KL divergence after 1000 iterations: 0.167434
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 10 and with 3000 iterations at max
+[t-SNE] Computing 31 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.005s...
+[t-SNE] Computed neighbors for 3000 samples in 0.026s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.434s
+[t-SNE] Iteration 50: error = 81.0277786, gradient norm = 0.0554694 (50 iterations in 0.852s)
+[t-SNE] Iteration 100: error = 68.4006195, gradient norm = 0.0352387 (50 iterations in 0.730s)
+[t-SNE] Iteration 150: error = 63.3819466, gradient norm = 0.0278513 (50 iterations in 0.774s)
+[t-SNE] Iteration 200: error = 60.3678093, gradient norm = 0.0217709 (50 iterations in 0.768s)
+[t-SNE] Iteration 250: error = 58.2644539, gradient norm = 0.0204809 (50 iterations in 0.778s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 58.264454
+[t-SNE] Iteration 300: error = 1.2014680, gradient norm = 0.0012725 (50 iterations in 0.866s)
+[t-SNE] Iteration 350: error = 0.6340256, gradient norm = 0.0005372 (50 iterations in 1.033s)
+[t-SNE] Iteration 400: error = 0.4532624, gradient norm = 0.0003757 (50 iterations in 0.832s)
+[t-SNE] Iteration 450: error = 0.3692447, gradient norm = 0.0002495 (50 iterations in 0.770s)
+[t-SNE] Iteration 500: error = 0.3117856, gradient norm = 0.0001993 (50 iterations in 0.788s)
+[t-SNE] Iteration 550: error = 0.2746569, gradient norm = 0.0001695 (50 iterations in 0.782s)
+[t-SNE] Iteration 600: error = 0.2511351, gradient norm = 0.0001527 (50 iterations in 0.808s)
+[t-SNE] Iteration 650: error = 0.2318981, gradient norm = 0.0001403 (50 iterations in 0.850s)
+[t-SNE] Iteration 700: error = 0.2176065, gradient norm = 0.0001280 (50 iterations in 0.833s)
+[t-SNE] Iteration 750: error = 0.2055128, gradient norm = 0.0001216 (50 iterations in 0.850s)
+[t-SNE] Iteration 800: error = 0.1943628, gradient norm = 0.0001153 (50 iterations in 0.816s)
+[t-SNE] Iteration 850: error = 0.1848089, gradient norm = 0.0001067 (50 iterations in 0.800s)
+[t-SNE] Iteration 900: error = 0.1768588, gradient norm = 0.0001083 (50 iterations in 0.808s)
+[t-SNE] Iteration 950: error = 0.1704549, gradient norm = 0.0001028 (50 iterations in 0.812s)
+[t-SNE] Iteration 1000: error = 0.1627308, gradient norm = 0.0000988 (50 iterations in 0.816s)
+[t-SNE] KL divergence after 1000 iterations: 0.162731
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 10 and with 4000 iterations at max
+[t-SNE] Computing 31 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.030s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.440s
+[t-SNE] Iteration 50: error = 80.7775345, gradient norm = 0.0548649 (50 iterations in 0.866s)
+[t-SNE] Iteration 100: error = 68.3944778, gradient norm = 0.0331926 (50 iterations in 0.728s)
+[t-SNE] Iteration 150: error = 63.5943718, gradient norm = 0.0287640 (50 iterations in 0.768s)
+[t-SNE] Iteration 200: error = 60.6307259, gradient norm = 0.0256440 (50 iterations in 0.790s)
+[t-SNE] Iteration 250: error = 58.4855766, gradient norm = 0.0236018 (50 iterations in 0.824s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 58.485577
+[t-SNE] Iteration 300: error = 1.2028162, gradient norm = 0.0012782 (50 iterations in 0.975s)
+[t-SNE] Iteration 350: error = 0.6283845, gradient norm = 0.0005390 (50 iterations in 1.030s)
+[t-SNE] Iteration 400: error = 0.4375940, gradient norm = 0.0003704 (50 iterations in 1.337s)
+[t-SNE] Iteration 450: error = 0.3478752, gradient norm = 0.0002582 (50 iterations in 1.119s)
+[t-SNE] Iteration 500: error = 0.2884288, gradient norm = 0.0002080 (50 iterations in 0.800s)
+[t-SNE] Iteration 550: error = 0.2490499, gradient norm = 0.0001824 (50 iterations in 0.807s)
+[t-SNE] Iteration 600: error = 0.2212643, gradient norm = 0.0001593 (50 iterations in 0.796s)
+[t-SNE] Iteration 650: error = 0.1984986, gradient norm = 0.0001572 (50 iterations in 0.975s)
+[t-SNE] Iteration 700: error = 0.1808692, gradient norm = 0.0001288 (50 iterations in 0.925s)
+[t-SNE] Iteration 750: error = 0.1678525, gradient norm = 0.0001187 (50 iterations in 0.848s)
+[t-SNE] Iteration 800: error = 0.1577361, gradient norm = 0.0001186 (50 iterations in 0.854s)
+[t-SNE] Iteration 850: error = 0.1479365, gradient norm = 0.0001027 (50 iterations in 0.828s)
+[t-SNE] Iteration 900: error = 0.1383924, gradient norm = 0.0000960 (50 iterations in 0.904s)
+[t-SNE] Iteration 950: error = 0.1303899, gradient norm = 0.0000958 (50 iterations in 0.900s)
+[t-SNE] Iteration 1000: error = 0.1233740, gradient norm = 0.0000902 (50 iterations in 0.872s)
+[t-SNE] KL divergence after 1000 iterations: 0.123374
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 10 and with 5000 iterations at max
+[t-SNE] Computing 31 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.026s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.000000
+[t-SNE] Computed conditional probabilities in 0.409s
+[t-SNE] Iteration 50: error = 81.0017319, gradient norm = 0.0524653 (50 iterations in 0.878s)
+[t-SNE] Iteration 100: error = 68.5099335, gradient norm = 0.0351916 (50 iterations in 0.813s)
+[t-SNE] Iteration 150: error = 63.5167465, gradient norm = 0.0256551 (50 iterations in 0.778s)
+[t-SNE] Iteration 200: error = 60.5317421, gradient norm = 0.0202384 (50 iterations in 0.746s)
+[t-SNE] Iteration 250: error = 58.4789848, gradient norm = 0.0207315 (50 iterations in 0.738s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 58.478985
+[t-SNE] Iteration 300: error = 1.2057499, gradient norm = 0.0012736 (50 iterations in 0.865s)
+[t-SNE] Iteration 350: error = 0.6303528, gradient norm = 0.0005413 (50 iterations in 0.987s)
+[t-SNE] Iteration 400: error = 0.4587384, gradient norm = 0.0003763 (50 iterations in 0.880s)
+[t-SNE] Iteration 450: error = 0.3729500, gradient norm = 0.0002437 (50 iterations in 0.870s)
+[t-SNE] Iteration 500: error = 0.3146431, gradient norm = 0.0002063 (50 iterations in 0.832s)
+[t-SNE] Iteration 550: error = 0.2772959, gradient norm = 0.0001772 (50 iterations in 0.795s)
+[t-SNE] Iteration 600: error = 0.2513207, gradient norm = 0.0001596 (50 iterations in 0.822s)
+[t-SNE] Iteration 650: error = 0.2320258, gradient norm = 0.0001402 (50 iterations in 0.808s)
+[t-SNE] Iteration 700: error = 0.2155033, gradient norm = 0.0001262 (50 iterations in 0.816s)
+[t-SNE] Iteration 750: error = 0.2021067, gradient norm = 0.0001220 (50 iterations in 0.824s)
+[t-SNE] Iteration 800: error = 0.1907542, gradient norm = 0.0001085 (50 iterations in 0.812s)
+[t-SNE] Iteration 850: error = 0.1824448, gradient norm = 0.0001035 (50 iterations in 0.836s)
+[t-SNE] Iteration 900: error = 0.1744272, gradient norm = 0.0000984 (50 iterations in 0.859s)
+[t-SNE] Iteration 950: error = 0.1681658, gradient norm = 0.0000965 (50 iterations in 1.003s)
+[t-SNE] Iteration 1000: error = 0.1606139, gradient norm = 0.0000812 (50 iterations in 0.884s)
+[t-SNE] KL divergence after 1000 iterations: 0.160614
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 20 and with 1000 iterations at max
+[t-SNE] Computing 61 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.050s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.008575
+[t-SNE] Computed conditional probabilities in 0.300s
+[t-SNE] Iteration 50: error = 75.0003433, gradient norm = 0.0506186 (50 iterations in 1.049s)
+[t-SNE] Iteration 100: error = 63.0076714, gradient norm = 0.0261346 (50 iterations in 0.850s)
+[t-SNE] Iteration 150: error = 58.5841751, gradient norm = 0.0183836 (50 iterations in 0.995s)
+[t-SNE] Iteration 200: error = 56.0990067, gradient norm = 0.0159365 (50 iterations in 0.953s)
+[t-SNE] Iteration 250: error = 54.5197182, gradient norm = 0.0149434 (50 iterations in 0.866s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 54.519718
+[t-SNE] Iteration 300: error = 0.9247440, gradient norm = 0.0011719 (50 iterations in 1.034s)
+[t-SNE] Iteration 350: error = 0.4712327, gradient norm = 0.0004768 (50 iterations in 1.108s)
+[t-SNE] Iteration 400: error = 0.3140789, gradient norm = 0.0002659 (50 iterations in 1.073s)
+[t-SNE] Iteration 450: error = 0.2574342, gradient norm = 0.0001974 (50 iterations in 1.038s)
+[t-SNE] Iteration 500: error = 0.2222455, gradient norm = 0.0001557 (50 iterations in 0.975s)
+[t-SNE] Iteration 550: error = 0.1915143, gradient norm = 0.0001556 (50 iterations in 0.949s)
+[t-SNE] Iteration 600: error = 0.1727976, gradient norm = 0.0001457 (50 iterations in 0.929s)
+[t-SNE] Iteration 650: error = 0.1479004, gradient norm = 0.0001566 (50 iterations in 0.937s)
+[t-SNE] Iteration 700: error = 0.1422410, gradient norm = 0.0001380 (50 iterations in 1.632s)
+[t-SNE] Iteration 750: error = 0.1339254, gradient norm = 0.0001191 (50 iterations in 0.924s)
+[t-SNE] Iteration 800: error = 0.1280883, gradient norm = 0.0001246 (50 iterations in 0.875s)
+[t-SNE] Iteration 850: error = 0.1254683, gradient norm = 0.0001154 (50 iterations in 0.870s)
+[t-SNE] Iteration 900: error = 0.1225119, gradient norm = 0.0001091 (50 iterations in 1.016s)
+[t-SNE] Iteration 950: error = 0.1225013, gradient norm = 0.0000956 (50 iterations in 0.929s)
+[t-SNE] Iteration 1000: error = 0.1200223, gradient norm = 0.0001000 (50 iterations in 1.037s)
+[t-SNE] KL divergence after 1000 iterations: 0.120022
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 20 and with 2000 iterations at max
+[t-SNE] Computing 61 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.055s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.008575
+[t-SNE] Computed conditional probabilities in 0.279s
+[t-SNE] Iteration 50: error = 75.1652222, gradient norm = 0.0499958 (50 iterations in 1.004s)
+[t-SNE] Iteration 100: error = 62.9264679, gradient norm = 0.0293106 (50 iterations in 0.792s)
+[t-SNE] Iteration 150: error = 58.3804131, gradient norm = 0.0222238 (50 iterations in 0.820s)
+[t-SNE] Iteration 200: error = 55.9273376, gradient norm = 0.0143333 (50 iterations in 0.862s)
+[t-SNE] Iteration 250: error = 54.3492661, gradient norm = 0.0137046 (50 iterations in 0.816s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 54.349266
+[t-SNE] Iteration 300: error = 0.9203344, gradient norm = 0.0011756 (50 iterations in 0.902s)
+[t-SNE] Iteration 350: error = 0.4689872, gradient norm = 0.0004717 (50 iterations in 1.458s)
+[t-SNE] Iteration 400: error = 0.3055740, gradient norm = 0.0002666 (50 iterations in 1.116s)
+[t-SNE] Iteration 450: error = 0.2428258, gradient norm = 0.0002016 (50 iterations in 0.955s)
+[t-SNE] Iteration 500: error = 0.1992989, gradient norm = 0.0001681 (50 iterations in 0.870s)
+[t-SNE] Iteration 550: error = 0.1687057, gradient norm = 0.0001611 (50 iterations in 0.866s)
+[t-SNE] Iteration 600: error = 0.1420628, gradient norm = 0.0001525 (50 iterations in 0.853s)
+[t-SNE] Iteration 650: error = 0.1331094, gradient norm = 0.0001434 (50 iterations in 0.862s)
+[t-SNE] Iteration 700: error = 0.1207908, gradient norm = 0.0001317 (50 iterations in 0.866s)
+[t-SNE] Iteration 750: error = 0.1165887, gradient norm = 0.0001239 (50 iterations in 0.845s)
+[t-SNE] Iteration 800: error = 0.1102896, gradient norm = 0.0001128 (50 iterations in 0.820s)
+[t-SNE] Iteration 850: error = 0.1060541, gradient norm = 0.0001091 (50 iterations in 0.830s)
+[t-SNE] Iteration 900: error = 0.1039156, gradient norm = 0.0001102 (50 iterations in 0.828s)
+[t-SNE] Iteration 950: error = 0.1012436, gradient norm = 0.0000997 (50 iterations in 1.266s)
+[t-SNE] Iteration 1000: error = 0.0999113, gradient norm = 0.0000981 (50 iterations in 0.867s)
+[t-SNE] KL divergence after 1000 iterations: 0.099911
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 20 and with 3000 iterations at max
+[t-SNE] Computing 61 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.050s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.008575
+[t-SNE] Computed conditional probabilities in 0.292s
+[t-SNE] Iteration 50: error = 74.7173767, gradient norm = 0.0472060 (50 iterations in 0.957s)
+[t-SNE] Iteration 100: error = 62.3515587, gradient norm = 0.0294683 (50 iterations in 0.788s)
+[t-SNE] Iteration 150: error = 57.9389114, gradient norm = 0.0228143 (50 iterations in 0.794s)
+[t-SNE] Iteration 200: error = 55.4746323, gradient norm = 0.0186813 (50 iterations in 0.818s)
+[t-SNE] Iteration 250: error = 53.8334160, gradient norm = 0.0141699 (50 iterations in 0.804s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 53.833416
+[t-SNE] Iteration 300: error = 0.9086238, gradient norm = 0.0011835 (50 iterations in 0.911s)
+[t-SNE] Iteration 350: error = 0.4624959, gradient norm = 0.0004757 (50 iterations in 1.226s)
+[t-SNE] Iteration 400: error = 0.3018397, gradient norm = 0.0002749 (50 iterations in 1.102s)
+[t-SNE] Iteration 450: error = 0.2335649, gradient norm = 0.0002068 (50 iterations in 0.950s)
+[t-SNE] Iteration 500: error = 0.2026405, gradient norm = 0.0001758 (50 iterations in 0.863s)
+[t-SNE] Iteration 550: error = 0.1653794, gradient norm = 0.0001655 (50 iterations in 0.854s)
+[t-SNE] Iteration 600: error = 0.1359563, gradient norm = 0.0001616 (50 iterations in 0.848s)
+[t-SNE] Iteration 650: error = 0.1246187, gradient norm = 0.0001605 (50 iterations in 0.855s)
+[t-SNE] Iteration 700: error = 0.1120023, gradient norm = 0.0001460 (50 iterations in 0.858s)
+[t-SNE] Iteration 750: error = 0.1063706, gradient norm = 0.0001337 (50 iterations in 0.840s)
+[t-SNE] Iteration 800: error = 0.1008106, gradient norm = 0.0001268 (50 iterations in 0.858s)
+[t-SNE] Iteration 850: error = 0.1004803, gradient norm = 0.0001182 (50 iterations in 0.862s)
+[t-SNE] Iteration 900: error = 0.0941891, gradient norm = 0.0001187 (50 iterations in 0.870s)
+[t-SNE] Iteration 950: error = 0.0912724, gradient norm = 0.0001101 (50 iterations in 0.871s)
+[t-SNE] Iteration 1000: error = 0.0880239, gradient norm = 0.0001065 (50 iterations in 0.874s)
+[t-SNE] KL divergence after 1000 iterations: 0.088024
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 20 and with 4000 iterations at max
+[t-SNE] Computing 61 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.047s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.008575
+[t-SNE] Computed conditional probabilities in 0.311s
+[t-SNE] Iteration 50: error = 75.0825043, gradient norm = 0.0471860 (50 iterations in 0.925s)
+[t-SNE] Iteration 100: error = 63.1081009, gradient norm = 0.0276886 (50 iterations in 0.776s)
+[t-SNE] Iteration 150: error = 58.4687042, gradient norm = 0.0212922 (50 iterations in 0.798s)
+[t-SNE] Iteration 200: error = 55.9185295, gradient norm = 0.0177676 (50 iterations in 0.808s)
+[t-SNE] Iteration 250: error = 54.2739067, gradient norm = 0.0145734 (50 iterations in 0.808s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 54.273907
+[t-SNE] Iteration 300: error = 0.9143700, gradient norm = 0.0011676 (50 iterations in 0.921s)
+[t-SNE] Iteration 350: error = 0.4680592, gradient norm = 0.0004715 (50 iterations in 1.133s)
+[t-SNE] Iteration 400: error = 0.3088623, gradient norm = 0.0002658 (50 iterations in 1.144s)
+[t-SNE] Iteration 450: error = 0.2526431, gradient norm = 0.0001946 (50 iterations in 1.029s)
+[t-SNE] Iteration 500: error = 0.2163989, gradient norm = 0.0001577 (50 iterations in 0.904s)
+[t-SNE] Iteration 550: error = 0.1818680, gradient norm = 0.0001757 (50 iterations in 0.879s)
+[t-SNE] Iteration 600: error = 0.1498404, gradient norm = 0.0001519 (50 iterations in 0.882s)
+[t-SNE] Iteration 650: error = 0.1313654, gradient norm = 0.0001399 (50 iterations in 0.883s)
+[t-SNE] Iteration 700: error = 0.1264620, gradient norm = 0.0001241 (50 iterations in 0.912s)
+[t-SNE] Iteration 750: error = 0.1199980, gradient norm = 0.0001274 (50 iterations in 0.871s)
+[t-SNE] Iteration 800: error = 0.1168342, gradient norm = 0.0001116 (50 iterations in 1.035s)
+[t-SNE] Iteration 850: error = 0.1144269, gradient norm = 0.0001112 (50 iterations in 0.884s)
+[t-SNE] Iteration 900: error = 0.1099239, gradient norm = 0.0001097 (50 iterations in 0.961s)
+[t-SNE] Iteration 950: error = 0.1063675, gradient norm = 0.0001025 (50 iterations in 0.884s)
+[t-SNE] Iteration 1000: error = 0.1028384, gradient norm = 0.0000984 (50 iterations in 0.879s)
+[t-SNE] KL divergence after 1000 iterations: 0.102838
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 20 and with 5000 iterations at max
+[t-SNE] Computing 61 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.057s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.008575
+[t-SNE] Computed conditional probabilities in 0.289s
+[t-SNE] Iteration 50: error = 74.8047485, gradient norm = 0.0503303 (50 iterations in 0.937s)
+[t-SNE] Iteration 100: error = 62.3763466, gradient norm = 0.0293357 (50 iterations in 0.782s)
+[t-SNE] Iteration 150: error = 57.9531441, gradient norm = 0.0227258 (50 iterations in 0.833s)
+[t-SNE] Iteration 200: error = 55.4766617, gradient norm = 0.0185444 (50 iterations in 0.888s)
+[t-SNE] Iteration 250: error = 53.8387604, gradient norm = 0.0138825 (50 iterations in 0.855s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 53.838760
+[t-SNE] Iteration 300: error = 0.9047700, gradient norm = 0.0011689 (50 iterations in 1.039s)
+[t-SNE] Iteration 350: error = 0.4625221, gradient norm = 0.0004708 (50 iterations in 1.142s)
+[t-SNE] Iteration 400: error = 0.3039557, gradient norm = 0.0002709 (50 iterations in 1.104s)
+[t-SNE] Iteration 450: error = 0.2440784, gradient norm = 0.0002067 (50 iterations in 1.150s)
+[t-SNE] Iteration 500: error = 0.2034433, gradient norm = 0.0001776 (50 iterations in 1.007s)
+[t-SNE] Iteration 550: error = 0.1742874, gradient norm = 0.0001820 (50 iterations in 0.955s)
+[t-SNE] Iteration 600: error = 0.1488341, gradient norm = 0.0001548 (50 iterations in 0.911s)
+[t-SNE] Iteration 650: error = 0.1294853, gradient norm = 0.0001484 (50 iterations in 0.899s)
+[t-SNE] Iteration 700: error = 0.1177412, gradient norm = 0.0001235 (50 iterations in 0.884s)
+[t-SNE] Iteration 750: error = 0.1154936, gradient norm = 0.0001269 (50 iterations in 0.866s)
+[t-SNE] Iteration 800: error = 0.1105770, gradient norm = 0.0001275 (50 iterations in 0.844s)
+[t-SNE] Iteration 850: error = 0.1058477, gradient norm = 0.0001175 (50 iterations in 0.854s)
+[t-SNE] Iteration 900: error = 0.1036423, gradient norm = 0.0001171 (50 iterations in 0.855s)
+[t-SNE] Iteration 950: error = 0.0983584, gradient norm = 0.0001175 (50 iterations in 0.840s)
+[t-SNE] Iteration 1000: error = 0.0979453, gradient norm = 0.0001050 (50 iterations in 0.832s)
+[t-SNE] KL divergence after 1000 iterations: 0.097945
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 50 and with 1000 iterations at max
+[t-SNE] Computing 151 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.008s...
+[t-SNE] Computed neighbors for 3000 samples in 0.150s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.018024
+[t-SNE] Computed conditional probabilities in 0.720s
+[t-SNE] Iteration 50: error = 64.6148834, gradient norm = 0.0418050 (50 iterations in 1.200s)
+[t-SNE] Iteration 100: error = 54.2093468, gradient norm = 0.0212892 (50 iterations in 1.116s)
+[t-SNE] Iteration 150: error = 51.5088692, gradient norm = 0.0158511 (50 iterations in 1.146s)
+[t-SNE] Iteration 200: error = 50.2646141, gradient norm = 0.0116941 (50 iterations in 1.086s)
+[t-SNE] Iteration 250: error = 49.2332535, gradient norm = 0.0096079 (50 iterations in 1.088s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 49.233253
+[t-SNE] Iteration 300: error = 0.5835657, gradient norm = 0.0009418 (50 iterations in 1.198s)
+[t-SNE] Iteration 350: error = 0.3150465, gradient norm = 0.0003610 (50 iterations in 1.363s)
+[t-SNE] Iteration 400: error = 0.2181786, gradient norm = 0.0002216 (50 iterations in 1.229s)
+[t-SNE] Iteration 450: error = 0.1813215, gradient norm = 0.0001725 (50 iterations in 1.164s)
+[t-SNE] Iteration 500: error = 0.1584687, gradient norm = 0.0001599 (50 iterations in 1.253s)
+[t-SNE] Iteration 550: error = 0.1431592, gradient norm = 0.0001651 (50 iterations in 1.162s)
+[t-SNE] Iteration 600: error = 0.1351845, gradient norm = 0.0001421 (50 iterations in 1.107s)
+[t-SNE] Iteration 650: error = 0.1322004, gradient norm = 0.0001270 (50 iterations in 1.149s)
+[t-SNE] Iteration 700: error = 0.1285252, gradient norm = 0.0001258 (50 iterations in 1.138s)
+[t-SNE] Iteration 750: error = 0.1243682, gradient norm = 0.0001084 (50 iterations in 1.082s)
+[t-SNE] Iteration 800: error = 0.1214110, gradient norm = 0.0001022 (50 iterations in 1.056s)
+[t-SNE] Iteration 850: error = 0.1180103, gradient norm = 0.0001102 (50 iterations in 1.031s)
+[t-SNE] Iteration 900: error = 0.1146325, gradient norm = 0.0001045 (50 iterations in 1.030s)
+[t-SNE] Iteration 950: error = 0.1118779, gradient norm = 0.0000917 (50 iterations in 1.029s)
+[t-SNE] Iteration 1000: error = 0.1099985, gradient norm = 0.0000976 (50 iterations in 1.042s)
+[t-SNE] KL divergence after 1000 iterations: 0.109999
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 50 and with 2000 iterations at max
+[t-SNE] Computing 151 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.005s...
+[t-SNE] Computed neighbors for 3000 samples in 0.146s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.018024
+[t-SNE] Computed conditional probabilities in 0.663s
+[t-SNE] Iteration 50: error = 64.5368881, gradient norm = 0.0426546 (50 iterations in 1.198s)
+[t-SNE] Iteration 100: error = 54.7045746, gradient norm = 0.0184020 (50 iterations in 1.108s)
+[t-SNE] Iteration 150: error = 52.1338196, gradient norm = 0.0182517 (50 iterations in 1.146s)
+[t-SNE] Iteration 200: error = 50.6303139, gradient norm = 0.0137082 (50 iterations in 1.112s)
+[t-SNE] Iteration 250: error = 49.8179321, gradient norm = 0.0095664 (50 iterations in 1.063s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 49.817932
+[t-SNE] Iteration 300: error = 0.6011068, gradient norm = 0.0009131 (50 iterations in 1.220s)
+[t-SNE] Iteration 350: error = 0.3334017, gradient norm = 0.0003586 (50 iterations in 1.365s)
+[t-SNE] Iteration 400: error = 0.2384425, gradient norm = 0.0002117 (50 iterations in 1.212s)
+[t-SNE] Iteration 450: error = 0.2087278, gradient norm = 0.0001643 (50 iterations in 1.217s)
+[t-SNE] Iteration 500: error = 0.1871628, gradient norm = 0.0001489 (50 iterations in 1.158s)
+[t-SNE] Iteration 550: error = 0.1701041, gradient norm = 0.0001521 (50 iterations in 1.187s)
+[t-SNE] Iteration 600: error = 0.1627895, gradient norm = 0.0001327 (50 iterations in 1.074s)
+[t-SNE] Iteration 650: error = 0.1588454, gradient norm = 0.0001070 (50 iterations in 1.111s)
+[t-SNE] Iteration 700: error = 0.1553461, gradient norm = 0.0001214 (50 iterations in 1.105s)
+[t-SNE] Iteration 750: error = 0.1532356, gradient norm = 0.0001104 (50 iterations in 1.065s)
+[t-SNE] Iteration 800: error = 0.1509629, gradient norm = 0.0001083 (50 iterations in 1.046s)
+[t-SNE] Iteration 850: error = 0.1481015, gradient norm = 0.0000953 (50 iterations in 1.037s)
+[t-SNE] Iteration 900: error = 0.1457981, gradient norm = 0.0001008 (50 iterations in 1.053s)
+[t-SNE] Iteration 950: error = 0.1432389, gradient norm = 0.0000990 (50 iterations in 1.042s)
+[t-SNE] Iteration 1000: error = 0.1411984, gradient norm = 0.0000924 (50 iterations in 1.025s)
+[t-SNE] KL divergence after 1000 iterations: 0.141198
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 50 and with 3000 iterations at max
+[t-SNE] Computing 151 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.004s...
+[t-SNE] Computed neighbors for 3000 samples in 0.129s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.018024
+[t-SNE] Computed conditional probabilities in 0.750s
+[t-SNE] Iteration 50: error = 64.2976074, gradient norm = 0.0440940 (50 iterations in 1.237s)
+[t-SNE] Iteration 100: error = 53.7987213, gradient norm = 0.0208630 (50 iterations in 1.126s)
+[t-SNE] Iteration 150: error = 51.1102142, gradient norm = 0.0157993 (50 iterations in 1.173s)
+[t-SNE] Iteration 200: error = 49.8183784, gradient norm = 0.0102667 (50 iterations in 1.166s)
+[t-SNE] Iteration 250: error = 49.0549965, gradient norm = 0.0089565 (50 iterations in 1.157s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 49.054996
+[t-SNE] Iteration 300: error = 0.5944334, gradient norm = 0.0009603 (50 iterations in 1.224s)
+[t-SNE] Iteration 350: error = 0.3306409, gradient norm = 0.0003576 (50 iterations in 1.375s)
+[t-SNE] Iteration 400: error = 0.2438333, gradient norm = 0.0002136 (50 iterations in 1.224s)
+[t-SNE] Iteration 450: error = 0.2021467, gradient norm = 0.0001715 (50 iterations in 1.213s)
+[t-SNE] Iteration 500: error = 0.1765377, gradient norm = 0.0001515 (50 iterations in 1.266s)
+[t-SNE] Iteration 550: error = 0.1610052, gradient norm = 0.0001406 (50 iterations in 1.174s)
+[t-SNE] Iteration 600: error = 0.1505761, gradient norm = 0.0001417 (50 iterations in 1.083s)
+[t-SNE] Iteration 650: error = 0.1463223, gradient norm = 0.0001328 (50 iterations in 1.127s)
+[t-SNE] Iteration 700: error = 0.1453123, gradient norm = 0.0001355 (50 iterations in 1.120s)
+[t-SNE] Iteration 750: error = 0.1423579, gradient norm = 0.0001277 (50 iterations in 1.110s)
+[t-SNE] Iteration 800: error = 0.1398415, gradient norm = 0.0001100 (50 iterations in 1.054s)
+[t-SNE] Iteration 850: error = 0.1380549, gradient norm = 0.0001105 (50 iterations in 1.029s)
+[t-SNE] Iteration 900: error = 0.1350690, gradient norm = 0.0000937 (50 iterations in 1.031s)
+[t-SNE] Iteration 950: error = 0.1333508, gradient norm = 0.0000913 (50 iterations in 1.021s)
+[t-SNE] Iteration 1000: error = 0.1306402, gradient norm = 0.0001046 (50 iterations in 1.028s)
+[t-SNE] KL divergence after 1000 iterations: 0.130640
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 50 and with 4000 iterations at max
+[t-SNE] Computing 151 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.008s...
+[t-SNE] Computed neighbors for 3000 samples in 0.133s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.018024
+[t-SNE] Computed conditional probabilities in 0.669s
+[t-SNE] Iteration 50: error = 64.6515045, gradient norm = 0.0407259 (50 iterations in 1.229s)
+[t-SNE] Iteration 100: error = 54.2621765, gradient norm = 0.0247782 (50 iterations in 1.115s)
+[t-SNE] Iteration 150: error = 51.3110924, gradient norm = 0.0187255 (50 iterations in 1.126s)
+[t-SNE] Iteration 200: error = 49.9515114, gradient norm = 0.0142649 (50 iterations in 1.131s)
+[t-SNE] Iteration 250: error = 49.1589241, gradient norm = 0.0093631 (50 iterations in 1.107s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 49.158924
+[t-SNE] Iteration 300: error = 0.5837371, gradient norm = 0.0009413 (50 iterations in 1.216s)
+[t-SNE] Iteration 350: error = 0.3188434, gradient norm = 0.0003598 (50 iterations in 1.401s)
+[t-SNE] Iteration 400: error = 0.2274696, gradient norm = 0.0002104 (50 iterations in 1.267s)
+[t-SNE] Iteration 450: error = 0.1911561, gradient norm = 0.0001609 (50 iterations in 1.265s)
+[t-SNE] Iteration 500: error = 0.1667553, gradient norm = 0.0001456 (50 iterations in 1.174s)
+[t-SNE] Iteration 550: error = 0.1491203, gradient norm = 0.0001377 (50 iterations in 1.208s)
+[t-SNE] Iteration 600: error = 0.1417535, gradient norm = 0.0001370 (50 iterations in 1.313s)
+[t-SNE] Iteration 650: error = 0.1373824, gradient norm = 0.0001247 (50 iterations in 1.148s)
+[t-SNE] Iteration 700: error = 0.1346278, gradient norm = 0.0001191 (50 iterations in 1.145s)
+[t-SNE] Iteration 750: error = 0.1313885, gradient norm = 0.0001140 (50 iterations in 1.130s)
+[t-SNE] Iteration 800: error = 0.1291895, gradient norm = 0.0001114 (50 iterations in 1.099s)
+[t-SNE] Iteration 850: error = 0.1255498, gradient norm = 0.0001096 (50 iterations in 1.034s)
+[t-SNE] Iteration 900: error = 0.1228454, gradient norm = 0.0001154 (50 iterations in 1.066s)
+[t-SNE] Iteration 950: error = 0.1203678, gradient norm = 0.0000988 (50 iterations in 1.140s)
+[t-SNE] Iteration 1000: error = 0.1176044, gradient norm = 0.0000960 (50 iterations in 1.066s)
+[t-SNE] KL divergence after 1000 iterations: 0.117604
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+
+performing tsne with perplexity 50 and with 5000 iterations at max
+[t-SNE] Computing 151 nearest neighbors...
+[t-SNE] Indexed 3000 samples in 0.008s...
+[t-SNE] Computed neighbors for 3000 samples in 0.129s...
+[t-SNE] Computed conditional probabilities for sample 1000 / 3000
+[t-SNE] Computed conditional probabilities for sample 2000 / 3000
+[t-SNE] Computed conditional probabilities for sample 3000 / 3000
+[t-SNE] Mean sigma: 0.018024
+[t-SNE] Computed conditional probabilities in 0.652s
+[t-SNE] Iteration 50: error = 63.8397141, gradient norm = 0.0443815 (50 iterations in 1.277s)
+[t-SNE] Iteration 100: error = 53.2651062, gradient norm = 0.0255124 (50 iterations in 1.103s)
+[t-SNE] Iteration 150: error = 50.4781723, gradient norm = 0.0142312 (50 iterations in 1.126s)
+[t-SNE] Iteration 200: error = 49.1979485, gradient norm = 0.0101704 (50 iterations in 1.116s)
+[t-SNE] Iteration 250: error = 48.4505234, gradient norm = 0.0108038 (50 iterations in 1.077s)
+[t-SNE] KL divergence after 250 iterations with early exaggeration: 48.450523
+[t-SNE] Iteration 300: error = 0.5714560, gradient norm = 0.0009167 (50 iterations in 1.529s)
+[t-SNE] Iteration 350: error = 0.3080890, gradient norm = 0.0003586 (50 iterations in 1.644s)
+[t-SNE] Iteration 400: error = 0.2212884, gradient norm = 0.0002030 (50 iterations in 1.263s)
+[t-SNE] Iteration 450: error = 0.1814440, gradient norm = 0.0001565 (50 iterations in 1.236s)
+[t-SNE] Iteration 500: error = 0.1586607, gradient norm = 0.0001411 (50 iterations in 1.297s)
+[t-SNE] Iteration 550: error = 0.1423348, gradient norm = 0.0001259 (50 iterations in 1.233s)
+[t-SNE] Iteration 600: error = 0.1341599, gradient norm = 0.0001075 (50 iterations in 1.211s)
+[t-SNE] Iteration 650: error = 0.1291285, gradient norm = 0.0001263 (50 iterations in 1.188s)
+[t-SNE] Iteration 700: error = 0.1263912, gradient norm = 0.0001093 (50 iterations in 1.189s)
+[t-SNE] Iteration 750: error = 0.1226918, gradient norm = 0.0001045 (50 iterations in 1.112s)
+[t-SNE] Iteration 800: error = 0.1196784, gradient norm = 0.0000961 (50 iterations in 1.091s)
+[t-SNE] Iteration 850: error = 0.1171328, gradient norm = 0.0000857 (50 iterations in 1.079s)
+[t-SNE] Iteration 900: error = 0.1148778, gradient norm = 0.0000912 (50 iterations in 1.073s)
+[t-SNE] Iteration 950: error = 0.1129926, gradient norm = 0.0000852 (50 iterations in 1.075s)
+[t-SNE] Iteration 1000: error = 0.1111321, gradient norm = 0.0000748 (50 iterations in 1.069s)
+[t-SNE] KL divergence after 1000 iterations: 0.111132
+Done..
+Creating plot for this t-sne visualization..
+C:\Users\Shubham\Anaconda3\lib\site-packages\seaborn\regression.py:573: UserWarning: The `size` parameter has been renamed to `height`; please update your code.
+  warnings.warn(msg, UserWarning)
+saving this plot as image in present working directory...
+
+Done
+Split into train - test set
+# X_train, X_test, y_train, y_test = train_test_split(data.drop(['class'],axis=1), data['class'],stratify=data['class'], test_size = 0.2,random_state =4)
+# X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,stratify=y_train, test_size = 0.2,random_state =4)
+X_train, X_test, y_train, y_test = train_test_split(data.drop(['class'],axis=1), data['class'],stratify=data['class'], test_size = 0.2,random_state =4)
+X_val = np.array(data_4['breath']).reshape(-1,1)
+y_val = np.array(data_4['class']).reshape(-1,1)
+print('X_train shape ->', X_train.shape)
+print('X_test shape ->', X_test.shape)
+print('X_val shape ->', X_val.shape)
+print('y_train shape ->', y_train.shape)
+print('y_test shape ->', y_test.shape)
+print('y_val shape ->', y_val.shape)
+X_train shape -> (2400, 1)
+X_test shape -> (600, 1)
+X_val shape -> (600, 1)
+y_train shape -> (2400,)
+y_test shape -> (600,)
+y_val shape -> (600, 1)
+# SVM
+# alpha = [10 ** x for x in range(-5, 1)] # hyperparam for SGD classifier.
+from sklearn.tree import DecisionTreeClassifier
+
+depths = list(range(1,11))
+
+acc_array_val = []
+acc_array_train = []
+acc_array_test = []
+for i in depths:
+    clf = DecisionTreeClassifier(max_depth=i, criterion='gini')
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_val)
+    score = metrics.accuracy_score(y_val, y_pred) * 100
+    acc_array_val.append(score)
+#     y_pred = clf.predict(X_train)
+#     score = metrics.accuracy_score(y_train, y_pred)
+#     acc_array_train.append(score * 100)
+#     y_pred = clf.predict(X_test)
+#     score = metrics.accuracy_score(y_test, y_pred)
+#     acc_array_test.append(score * 100)
+    print('For values of depth = ', i, "The acc score is:", score, '%')
+For values of depth =  1 The acc score is: 48.66666666666667 %
+For values of depth =  2 The acc score is: 91.83333333333333 %
+For values of depth =  3 The acc score is: 91.83333333333333 %
+For values of depth =  4 The acc score is: 91.83333333333333 %
+For values of depth =  5 The acc score is: 91.83333333333333 %
+For values of depth =  6 The acc score is: 91.83333333333333 %
+For values of depth =  7 The acc score is: 91.83333333333333 %
+For values of depth =  8 The acc score is: 91.83333333333333 %
+For values of depth =  9 The acc score is: 91.83333333333333 %
+For values of depth =  10 The acc score is: 91.83333333333333 %
+plt.rcParams['figure.figsize'] = [16, 8]
+fig, ax = plt.subplots()
+ax.plot(depths, acc_array_val,c='g')
+# for i, txt in enumerate(np.round(scores_list,2)):
+#     ax.annotate((k_range[i],np.round(txt,2)), (k_range[i],scores_list[i]))
+    
+plt.grid()
+plt.title("Validation Error for each depth")
+plt.xlabel("Depth value")
+plt.ylabel("Accuracy")
+plt.show()    
+    
+
+# sns.FacetGrid(data_4, hue="class", size=5) \
+#    .map(sns.distplot, "breath") \
+#    .add_legend();
+
+# # a_plot.set(ylim=(0, 0.5))
+# plt.show();
+# sns.FacetGrid(data, hue="class", size=5) \
+#    .map(sns.distplot, "breath") \
+#    .add_legend();
+
+# # a_plot.set(ylim=(0, 0.5))
+# plt.show();
+training & validation
+print('X_train shape ->', X_train.shape)
+print('X_test shape ->', X_test.shape)
+print('X_val shape ->', X_val.shape)
+print('y_train shape ->', y_train.shape)
+print('y_test shape ->', y_test.shape)
+print('y_val shape ->', y_val.shape)
+
+y_train = np.array(y_train).reshape(-1,1)
+y_val = np.array(y_val).reshape(-1,1)
+X_train shape -> (2400, 1)
+X_test shape -> (600, 1)
+X_val shape -> (600, 1)
+y_train shape -> (2400,)
+y_test shape -> (600,)
+y_val shape -> (600, 1)
+# concat training & validation data for final training
+X_train = np.concatenate((X_train, X_val), axis=0)
+Y_train = np.concatenate((y_train, y_val), axis=0)
+print(' X_train shape ->', X_train.shape)
+print(' Y_train shape ->', Y_train.shape)
+print( 'test shapes ->', X_test.shape, y_test.shape)
+ X_train shape -> (3000, 1)
+ Y_train shape -> (3000, 1)
+test shapes -> (600, 1) (600,)
+Train final model on the depth=2
+from sklearn.tree import DecisionTreeClassifier
+
+clf = DecisionTreeClassifier(max_depth=2)
+
+clf.fit(X_train, Y_train)
+y_pred_train = clf.predict(X_train)
+score = metrics.accuracy_score(Y_train, y_pred_train)
+print('Train acc->', score)
+
+# test
+y_pred_test = clf.predict(X_test)
+score = metrics.accuracy_score(y_test, y_pred_test)
+print(' test Score ->', score)
+
+# val
+y_pred_val = clf.predict(X_val)
+score = metrics.accuracy_score(y_val, y_pred_val)
+print(' val Score ->', score)
+Train acc-> 1.0
+ test Score -> 1.0
+ val Score -> 1.0
+# clf = SVC(C=0.0001, kernel='linear')
+# clf.fit(X_train, y_train)
+# y_pred = clf.predict(X_test)
+# score = metrics.accuracy_score(y_test, y_pred)
+# print('score ->', score)
+cm = confusion_matrix(y_test, y_pred_test)
+fp = cm.sum(axis=0) - np.diag(cm)  
+fn = cm.sum(axis=1) - np.diag(cm)
+tp = np.diag(cm)
+tn = cm.sum() - (fp + fn + tp)
+specificity= ((tn / (tn + fp))*100)
+print('specificity ->', specificity)
+sensitivity = ((tp / (tp + fn)) * 100)
+print('sensitivity ->', sensitivity)
+precision = ((tp/(tp + fn)) * 100)
+print('precision ->', precision)
+recall = ((tp/(tp + fp))*100)
+print('recall ->', recall)
+# precision = (tp/(tp + fn)) * 100
+# recall = (tp/(tp + fp))*100
+f1_score = (2 * (precision * recall) / (precision + recall))
+print('f1 score ->', f1_score)
+specificity -> [ 98.5  100.    99.25]
+sensitivity -> [100.   95.5 100. ]
+precision -> [100.   95.5 100. ]
+recall -> [ 97.08737864 100.          98.52216749]
+f1 score -> [98.52216749 97.69820972 99.25558313]
+Using cross validation for classification
+# %%time
+# clf = SVC(kernel='linear', C=0.001)
+# clf.fit(X_train, Y_train)
+scores = cross_val_score(clf, X_train, Y_train, cv=10, scoring='accuracy')
+print(scores)
+[1.         1.         1.         1.         1.         1.
+ 1.         0.96666667 1.         1.        ]
+print('Mean cross validation score:', scores.mean())
+Mean cross validation score: 0.9966666666666667
+acc_data = {'Depth':list(range(1,11)),'kfold':list(range(1,11)),'Accuracy':scores }
+cv = pd.DataFrame(acc_data, columns=['Depth','kfold','Accuracy'])
+cv
+Depth	kfold	Accuracy
+0	1	1	1.000000
+1	2	2	1.000000
+2	3	3	1.000000
+3	4	4	1.000000
+4	5	5	1.000000
+5	6	6	1.000000
+6	7	7	1.000000
+7	8	8	0.966667
+8	9	9	1.000000
+9	10	10	1.000000
+Confusion matrix
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=90)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+
+plt.rcParams["font.family"] = 'DejaVu Sans'
+
+# confusion_matrices = []
+# confusion_matrices.append(ConfusionMatrix(y_test, y_pred).to_dataframe())
+# print((confusion_matrices[0]))
+y_pred = clf.predict(X_test)
+cm = confusion_matrix(y_test, y_pred)
+# print(cm)
+plot_confusion_matrix(cm, classes = ['fast','normal','slow'])
+
+cm = confusion_matrix(y_test, y_pred_test)
+fp = cm.sum(axis=0) - np.diag(cm)  
+fn = cm.sum(axis=1) - np.diag(cm)
+tp = np.diag(cm)
+tn = cm.sum() - (fp + fn + tp)
+specificity= ((tn / (tn + fp))*100)
+print('specificity ->', specificity)
+sensitivity = ((tp / (tp + fn)) * 100)
+print('sensitivity ->', sensitivity)
+precision = ((tp/(tp + fn)) * 100)
+print('precision ->', precision)
+recall = ((tp/(tp + fp))*100)
+print('recall ->', recall)
+# precision = (tp/(tp + fn)) * 100
+# recall = (tp/(tp + fp))*100
+f1_score = (2 * (precision * recall) / (precision + recall))
+print('f1 score ->', f1_score)
+specificity -> [100. 100. 100.]
+sensitivity -> [100. 100. 100.]
+precision -> [100. 100. 100.]
+recall -> [100. 100. 100.]
+f1 score -> [100. 100. 100.]
+Calculate precision
+# precision_score(y_test, y_pred)
+precision = tp/(tp + fn)
+print(precision)
+# values in the order ['Normal','Tachypnea','abnormal','bradypnea']
+[1. 1. 1.]
+Calculate recall
+recall = tp/(tp + fp)
+print(recall)
+# values in the order ['Normal','Tachypnea','abnormal','bradypnea']
+[0.97087379 1.         0.98522167]
+Specificity
+specificity = tn/(tn + fp)
+print(specificity)
+# values in the order ['fast','normal','slow']
+[1. 1. 1.]
+F1-score
+F1 = 2 * (precision * recall) / (precision + recall)
+print(F1)
+# values in the order ['Normal','Tachypnea','abnormal','bradypnea']
+[1.98019802 1.98019802 1.98019802]
+Classification scores
+from sklearn.metrics import classification_report
+print(classification_report(y_test, y_pred_test, target_names=['fast','normal','slow']))
+              precision    recall  f1-score   support
+
+        fast       1.00      1.00      1.00       200
+      normal       1.00      1.00      1.00       200
+        slow       1.00      1.00      1.00       200
+
+    accuracy                           1.00       600
+   macro avg       1.00      1.00      1.00       600
+weighted avg       1.00      1.00      1.00       600
+
+ 
+ 
+ 
+ 
